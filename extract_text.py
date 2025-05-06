@@ -206,34 +206,161 @@ def filter_specific_fields(all_text):
     
     return fields
 
+def extract_regions_from_image(image_path):
+    """
+    Divide the image into specific regions for targeted OCR
+
+    Args:
+        image_path (str): Path to the document image
+
+    Returns:
+        dict: Dictionary containing region images
+    """
+    # Read the original image
+    image = cv2.imread(image_path)
+    if image is None:
+        raise ValueError(f"Could not read image at {image_path}")
+
+    # Get image dimensions
+    height, width = image.shape[:2]
+
+    # Define regions (based on typical Phytosanitary Certificate layout)
+    # Format: [x_start, y_start, x_end, y_end]
+    regions = {
+        # Upper right corner for Form P.Q.7 and receipt number
+        'upper_right': [int(width * 0.6), 0, width, int(height * 0.3)],
+
+        # Middle section for destination and transportation
+        'middle': [0, int(height * 0.3), width, int(height * 0.7)],
+
+        # Bottom section for weight, boxes, and export date
+        'bottom': [0, int(height * 0.7), width, height]
+    }
+
+    # Extract each region
+    region_images = {}
+    for region_name, coords in regions.items():
+        x_start, y_start, x_end, y_end = coords
+        region_images[region_name] = image[y_start:y_end, x_start:x_end].copy()
+
+        # # Save region for debugging (optional)
+        # cv2.imwrite(f"region_{region_name}.jpg", region_images[region_name])
+
+    return region_images
+
+def extract_text_from_region(region_image, region_name):
+    """
+    Extract text from a specific region using PaddleOCR
+
+    Args:
+        region_image: Image of the region
+        region_name (str): Name of the region for optimization
+
+    Returns:
+        list: List of text items found in the region
+    """
+    # Initialize PaddleOCR with English language model
+    ocr = PaddleOCR(
+        use_angle_cls=True,
+        lang='en',
+        use_gpu=False,
+        det_db_thresh=0.3,
+        det_db_box_thresh=0.5,
+        det_db_unclip_ratio=1.8,
+        rec_batch_num=6,
+        drop_score=0.6
+    )
+
+    # Save region to a temporary file
+    temp_region_path = f"temp_{region_name}.jpg"
+    cv2.imwrite(temp_region_path, region_image)
+
+    # Get OCR results
+    results = ocr.ocr(temp_region_path, cls=True)
+
+    # Process results
+    region_text = []
+    if results[0]:
+        for line in results[0]:
+            text = line[1][0].strip()
+            confidence = line[1][1]
+            bbox = line[0]
+
+            # Skip low confidence or very short results
+            if confidence < 0.6 or len(text) < 2:
+                continue
+
+            # Filter for English characters
+            non_latin_count = sum(1 for char in text if ord(char) > 127)
+            if non_latin_count / len(text) > 0.5:  # Skip if more than 50% non-Latin characters
+                continue
+
+            region_text.append({
+                'text': text,
+                'confidence': confidence,
+                'bbox': bbox
+            })
+
+    # Clean up temporary file
+    if os.path.exists(temp_region_path):
+        os.remove(temp_region_path)
+
+    # Sort results by position (top to bottom, then left to right)
+    region_text.sort(key=lambda x: (sum([p[1] for p in x['bbox']]) / 4, sum([p[0] for p in x['bbox']]) / 4))
+
+    return region_text
+
+def extract_fields_by_region(image_path):
+    """
+    Extract specific fields from document by analyzing separate regions
+
+    Args:
+        image_path (str): Path to the document image
+
+    Returns:
+        dict: Dictionary containing all extracted fields
+    """
+    # Extract regions from the image
+    regions = extract_regions_from_image(image_path)
+
+    # Extract text from each region
+    region_texts = {}
+    for region_name, region_image in regions.items():
+        region_texts[region_name] = extract_text_from_region(region_image, region_name)
+    return region_texts
+
 # Main execution
 if __name__ == "__main__":
     # Replace with your image path
     image_path = "ex2-large-p1.jpeg"
     
-    # Step 1: Extract all text
-    all_text = extract_all_english_text(image_path)
+    # # Step 1: Extract all text
+    # all_text = extract_all_english_text(image_path)
     
-    # Print all extracted text
-    print("=== ALL EXTRACTED TEXT ===")
-    for i, item in enumerate(all_text, 1):
-        print(f"{i}. {item['text']} (Confidence: {item['confidence']:.2f})")
+    # # Print all extracted text
+    # print("=== ALL EXTRACTED TEXT ===")
+    # for i, item in enumerate(all_text, 1):
+    #     print(f"{i}. {item['text']} (Confidence: {item['confidence']:.2f})")
     
-    # Step 2: Filter for specific fields
-    extracted_fields = filter_specific_fields(all_text)
+    # # Step 2: Filter for specific fields
+    # extracted_fields = filter_specific_fields(all_text)
     
-    # Print filtered fields
-    print("\n=== EXTRACTED SPECIFIC FIELDS ===")
-    print(f"Form Number: {extracted_fields['form_number'] or 'Not found'}")
-    print(f"Receipt Number: {extracted_fields['receipt_number'] or 'Not found'}")
-    print(f"Destination Country: {extracted_fields['destination_country'] or 'Not found'}")
-    print(f"Transportation Mode: {extracted_fields['transportation_mode'] or 'Not found'}")
-    print(f"Total Weight/Value: {extracted_fields['total_weight'] or 'Not found'}")
-    print(f"Number of Boxes: {extracted_fields['number_of_boxes'] or 'Not found'}")
-    print(f"Export Date: {extracted_fields['export_date'] or 'Not found'}")
+    # # Print filtered fields
+    # print("\n=== EXTRACTED SPECIFIC FIELDS ===")
+    # print(f"Form Number: {extracted_fields['form_number'] or 'Not found'}")
+    # print(f"Receipt Number: {extracted_fields['receipt_number'] or 'Not found'}")
+    # print(f"Destination Country: {extracted_fields['destination_country'] or 'Not found'}")
+    # print(f"Transportation Mode: {extracted_fields['transportation_mode'] or 'Not found'}")
+    # print(f"Total Weight/Value: {extracted_fields['total_weight'] or 'Not found'}")
+    # print(f"Number of Boxes: {extracted_fields['number_of_boxes'] or 'Not found'}")
+    # print(f"Export Date: {extracted_fields['export_date'] or 'Not found'}")
     
-    # Save results to files
-    with open("all_extracted_text.txt", "w", encoding="utf-8") as f:
-        f.write("=== ALL EXTRACTED TEXT ===\n\n")
-        for i, item in enumerate(all_text, 1):
-            f.write(f"{i}. {item['text']} (Confidence: {item['confidence']:.2f})\n")
+    # Extract fields by region
+    fields, region_texts = extract_fields_by_region(image_path)
+
+    # Print all text by region
+    print("=== EXTRACTED TEXT BY REGION ===")
+    for region_name, texts in region_texts.items():
+        print(f"\n-- {region_name.upper()} REGION --")
+        for i, item in enumerate(texts, 1):
+            print(f"{i}. {item['text']} (Confidence: {item['confidence']:.2f})")
