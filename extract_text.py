@@ -153,11 +153,11 @@ def filter_specific_fields(all_text):
                     fields['total_weight'] = value_text
                     break
         
-        # Check for "Baht" or currency values
-        if 'baht' in text.lower() or re.search(r'\d+,\d+,\d+', text):
-            matches = re.search(r'([\d,\.]+)\s*baht', text.lower())
+        # Check for "kg" or currency values
+        if 'kg' in text.lower() or re.search(r'\d+,\d+,\d+', text):
+            matches = re.search(r'([\d,\.]+)\s*kg', text.lower())
             if matches:
-                fields['total_weight'] = matches.group(1) + ' Baht'
+                fields['total_weight'] = matches.group(1) + ' kg'
             else:
                 numeric_match = re.search(r'\d+[,\d]*[.\d]+', text)
                 if numeric_match:
@@ -198,10 +198,10 @@ def filter_specific_fields(all_text):
         if kg_match and not fields['total_weight']:
             fields['total_weight'] = kg_match.group(1) + ' kg'
         
-        # Value in Baht or other currency
+        # Value in kg
         if not fields['total_weight'] and re.search(r'\d+[,\d]*\.\d+', text):
             # Check if it's in a context that suggests it's a value
-            if any(value_word in text.lower() for value_word in ['value', 'amount', 'total', 'baht']):
+            if any(value_word in text.lower() for value_word in ['value', 'amount', 'total', 'kg']):
                 fields['total_weight'] = re.search(r'\d+[,\d]*\.\d+', text).group()
     
     return fields
