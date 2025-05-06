@@ -334,27 +334,6 @@ if __name__ == "__main__":
     # Replace with your image path
     image_path = "ex2-large-p1.jpeg"
     
-    # # Step 1: Extract all text
-    # all_text = extract_all_english_text(image_path)
-    
-    # # Print all extracted text
-    # print("=== ALL EXTRACTED TEXT ===")
-    # for i, item in enumerate(all_text, 1):
-    #     print(f"{i}. {item['text']} (Confidence: {item['confidence']:.2f})")
-    
-    # # Step 2: Filter for specific fields
-    # extracted_fields = filter_specific_fields(all_text)
-    
-    # # Print filtered fields
-    # print("\n=== EXTRACTED SPECIFIC FIELDS ===")
-    # print(f"Form Number: {extracted_fields['form_number'] or 'Not found'}")
-    # print(f"Receipt Number: {extracted_fields['receipt_number'] or 'Not found'}")
-    # print(f"Destination Country: {extracted_fields['destination_country'] or 'Not found'}")
-    # print(f"Transportation Mode: {extracted_fields['transportation_mode'] or 'Not found'}")
-    # print(f"Total Weight/Value: {extracted_fields['total_weight'] or 'Not found'}")
-    # print(f"Number of Boxes: {extracted_fields['number_of_boxes'] or 'Not found'}")
-    # print(f"Export Date: {extracted_fields['export_date'] or 'Not found'}")
-    
     # Extract fields by region
     fields, region_texts = extract_fields_by_region(image_path)
 
