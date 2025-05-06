@@ -4,6 +4,18 @@ import numpy as np
 from paddleocr import PaddleOCR
 import re
 
+# Initialize PaddleOCR with English language model
+ocr = PaddleOCR(
+    use_angle_cls=True,
+    lang='en',
+    use_gpu=False,
+    det_db_thresh=0.3,
+    det_db_box_thresh=0.5,
+    det_db_unclip_ratio=1.8,
+    rec_batch_num=6,
+    drop_score=0.6
+)
+
 def extract_all_english_text(image_path):
     """
     Extract all English text from the document using PaddleOCR
@@ -14,18 +26,7 @@ def extract_all_english_text(image_path):
     Returns:
         list: List of dictionaries containing all detected English text
     """
-    # Initialize PaddleOCR with English language model
-    ocr = PaddleOCR(
-        use_angle_cls=True,
-        lang='en',
-        use_gpu=False,
-        det_db_thresh=0.3,
-        det_db_box_thresh=0.5,
-        det_db_unclip_ratio=1.8,
-        rec_batch_num=6,
-        drop_score=0.6
-    )
-    
+
     # Get OCR results
     results = ocr.ocr(image_path, cls=True)
     
@@ -259,17 +260,7 @@ def extract_text_from_region(region_image, region_name):
     Returns:
         list: List of text items found in the region
     """
-    # Initialize PaddleOCR with English language model
-    ocr = PaddleOCR(
-        use_angle_cls=True,
-        lang='en',
-        use_gpu=False,
-        det_db_thresh=0.3,
-        det_db_box_thresh=0.5,
-        det_db_unclip_ratio=1.8,
-        rec_batch_num=6,
-        drop_score=0.6
-    )
+
 
     # Save region to a temporary file
     temp_region_path = f"temp_{region_name}.jpg"
@@ -335,7 +326,7 @@ if __name__ == "__main__":
     image_path = "ex2-large-p1.jpeg"
     
     # Extract fields by region
-    fields, region_texts = extract_fields_by_region(image_path)
+    region_texts = extract_fields_by_region(image_path)
 
     # Print all text by region
     print("=== EXTRACTED TEXT BY REGION ===")
@@ -343,3 +334,4 @@ if __name__ == "__main__":
         print(f"\n-- {region_name.upper()} REGION --")
         for i, item in enumerate(texts, 1):
             print(f"{i}. {item['text']} (Confidence: {item['confidence']:.2f})")
+    

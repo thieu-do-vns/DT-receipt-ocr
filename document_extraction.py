@@ -130,6 +130,7 @@ def extract_document(image: str, use_regions: bool = True) -> Dict[str, Any]:
         result = {
             'status': 'success',
             'fields': {},
+            'region_texts': {},
             'raw_text': []
         }
         
@@ -212,10 +213,10 @@ def extract_info(image: str):
     
     if ocr_result['status'] == 'success':
         ocr_text = "=== EXTRACTED FIELDS ===\n"  # Fixed string quote
-        for field_name, field_value in ocr_result['fields'].items():  # Changed 'result' to 'ocr_result'
+        for field_name, field_value in ocr_result['region_texts'].items(): 
             ocr_text += f"{field_name}: {field_value}\n"  # Changed print() to string concatenation, added newline
         
-        llm_result = extract_with_llm(ocr_result['raw_text'])  # Changed 'result' to 'ocr_result'
+        llm_result = extract_with_llm(ocr_text) 
         if llm_result['status'] == 'success':
             return llm_result['llm_extraction']  # Return the LLM extraction
         else:
