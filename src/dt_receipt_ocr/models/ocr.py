@@ -1,0 +1,17 @@
+from sqlmodel import SQLModel
+from datetime import date
+from typing import Literal
+
+
+class PQ7Request(SQLModel):
+    file_url: str
+    file_type: Literal["image", "pdf"]
+
+
+class PQ7Response(SQLModel):
+    pq7_receipt_number: str
+    destination_country: str
+    transportation_mode: str
+    total_weight: str
+    number_of_boxes: int
+    export_date: date
