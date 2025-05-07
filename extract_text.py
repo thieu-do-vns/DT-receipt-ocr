@@ -3,6 +3,7 @@ import cv2
 import numpy as np
 from paddleocr import PaddleOCR
 import re
+import concurrent.futures
 
 # Initialize PaddleOCR with English language model
 ocr = PaddleOCR(
@@ -268,6 +269,7 @@ def extract_text_from_region(region_image, region_name):
 
     # Get OCR results
     results = ocr.ocr(temp_region_path, cls=True)
+    height, width = region_image.shape[:2]
 
     # Process results
     region_text = []
@@ -276,6 +278,16 @@ def extract_text_from_region(region_image, region_name):
             text = line[1][0].strip()
             confidence = line[1][1]
             bbox = line[0]
+            
+            if region_name == "upper_right":
+              # update min_x
+              bbox[0] = bbox[0] + int(width * 0.6)
+            if region_name == "middle":
+              # update min_y 
+              bbox[2] = bbox[2] + int(height * 0.3)
+            if region_name == "bottom":
+              # update min_y
+              bbox[2] = bbox[2] + int(height * 0.7)
 
             # Skip low confidence or very short results
             if confidence < 0.6 or len(text) < 2:
@@ -316,8 +328,22 @@ def extract_fields_by_region(image_path):
 
     # Extract text from each region
     region_texts = {}
-    for region_name, region_image in regions.items():
-        region_texts[region_name] = extract_text_from_region(region_image, region_name)
+    with concurrent.futures.ThreadPoolExecutor() as executor:
+        # Create a dictionary mapping each future to its region name
+        future_to_region = {
+            executor.submit(extract_text_from_region, region_image, region_name): region_name
+            for region_name, region_image in regions.items()
+        }
+        
+        # Process the results as they complete
+        for future in concurrent.futures.as_completed(future_to_region):
+            region_name = future_to_region[future]
+            try:
+                region_texts[region_name] = future.result()
+            except Exception as e:
+                print(f"Error processing region {region_name}: {e}")
+                region_texts[region_name] = f"ERROR: {str(e)}"
+    
     return region_texts
 
 # Main execution
