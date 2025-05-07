@@ -280,14 +280,24 @@ def extract_text_from_region(region_image, region_name):
             bbox = line[0]
             
             if region_name == "upper_right":
-              # update min_x
-              bbox[0] = bbox[0] + int(width * 0.6)
+              # update min_x bbox[0] -> (min_x, min_y)
+              bbox[0][0] = bbox[0][0] + int(width * 0.6)
+              bbox[1][0] = bbox[1][0] + int(width * 0.6)
+              bbox[2][0] = bbox[2][0] + int(width * 0.6)
+              bbox[3][0] = bbox[3][0] + int(width * 0.6)
             if region_name == "middle":
               # update min_y 
-              bbox[2] = bbox[2] + int(height * 0.3)
+              bbox[0][1] = bbox[0][1] + int(height * 0.3)
+              bbox[1][1] = bbox[1][1] + int(height * 0.3)
+              bbox[2][1] = bbox[2][1] + int(height * 0.3)
+              bbox[3][1] = bbox[3][1] + int(height * 0.3)
+              
             if region_name == "bottom":
-              # update min_y
-              bbox[2] = bbox[2] + int(height * 0.7)
+              # update y
+              bbox[0][1] = bbox[0][1] + int(height * 0.7)
+              bbox[1][1] = bbox[1][1] + int(height * 0.7)
+              bbox[2][1] = bbox[2][1] + int(height * 0.7)
+              bbox[3][1] = bbox[3][1] + int(height * 0.7)
 
             # Skip low confidence or very short results
             if confidence < 0.6 or len(text) < 2:
