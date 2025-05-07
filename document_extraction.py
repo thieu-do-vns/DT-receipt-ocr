@@ -3,9 +3,41 @@ import tempfile
 import requests
 from typing import Dict, Any, Union, List, Tuple
 from urllib.parse import urlparse
+import json
 
 # Import the existing extraction functions
 from extract_text import extract_all_english_text, filter_specific_fields, extract_regions_from_image, extract_text_from_region
+
+def extract_total_weight(bboxes):
+  potential = []
+  anchor_box = []
+  res = []
+  unit = ''
+  for i, bbox in enumerate(bboxes):
+    if bbox['text'].lower() == 'quantity':
+      potential = bboxes[i:]
+      anchor_box = bboxes[i]
+    if '.0000' in bbox['text']:
+      unit = bbox['text']
+
+  for bbox in potential:
+    if is_overlap(bbox['bbox'], anchor_box['bbox']) and bbox['text'] != anchor_box['text'] and is_not_second_row(bbox['text']):
+      return ''.join(char for char in bbox['text'] if char.isdigit()) + ',' + unit
+  return None
+
+def is_overlap(bbox1, bbox2):
+  x1, y1, x2, y2 = bbox1
+  x3, y3, x4, y4 = bbox2
+
+  if (x1 <= x3 <= x2 or x1 <= x4 <= x2) and (y2 < y3 or y4 < y1):
+    return True
+  return False
+
+def is_not_second_row(bbox['text']):
+    return '.0000' not in bbox['text']
+
+def flatten_dict_list(data):
+    return [item for k,v in data.items() for item in v]
 
 def download_image_from_url(image_url: str) -> str:
     """
@@ -156,7 +188,8 @@ def extract_document(image: str, use_regions: bool = True) -> Dict[str, Any]:
         finally:
             # Clean up the downloaded image
             if os.path.exists(local_path):
-                os.remove(local_path)
+                # os.remove(local_path)
+                pass
     except Exception as e:
         return {
             'status': 'error',
@@ -216,10 +249,28 @@ def extract_info(image: str):
         for field_name, field_value in ocr_result['region_texts'].items(): 
             ocr_text += f"{field_name}: {field_value}\n"  # Changed print() to string concatenation, added newline
         
+        total_weight = extract_total_weight(flatten_dict_list(ocr_result['region_texts']))
+        
+        print("[ocr text]: ", ocr_text)
+
         llm_result = extract_with_llm(ocr_text) 
         if llm_result['status'] == 'success':
-            return llm_result['llm_extraction']  # Return the LLM extraction
+            try:
+                llm_result['llm_extraction'] = json.loads(llm_result['llm_extraction'])
+                llm_result['llm_extraction']['total_weight_heuristic'] = total_weight
+                return llm_result['llm_extraction']  # Return the LLM extraction
+            except:
+                return "Error: Could not parse llm response"
         else:
-            return ocr_text  # Return OCR text if LLM extraction fails
+            return f"Error: {llm_result['error']}"
     else:
         return f"Error: {ocr_result['error']}"  # Changed 'result' to 'ocr_result'
+
+# Main execution
+if __name__ == "__main__":
+    # Replace with your image path
+    image_path = "test_image/image5/ex5-large-p1.jpeg"
+    
+    # Extract fields by region
+    region_texts = extract_info(image_path)
+    print(region_texts)
