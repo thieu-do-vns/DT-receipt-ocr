@@ -1,10 +1,8 @@
 from sqlmodel import SQLModel
-from typing import Literal
 
 
 class PQ7Request(SQLModel):
-    file_url: str
-    file_type: Literal["image", "pdf"]
+    pq7_url: str
 
 
 class PQ7Response(SQLModel):

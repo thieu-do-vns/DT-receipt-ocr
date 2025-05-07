@@ -1,14 +1,14 @@
-import cv2
 from dependency_injector.wiring import inject
 import numpy as np
 from jaxtyping import UInt8
 
 from dt_receipt_ocr.deps.container import OCRDep, OpenAIDep
 from dt_receipt_ocr.models.ocr import PQ7Response
+from PIL.Image import Image
 
 
-async def extract(img_bytes: bytes):
-    img_np = cv2.imdecode(np.frombuffer(img_bytes, dtype=np.uint8), cv2.IMREAD_COLOR)
+async def extract(img_pil: Image):
+    img_np = np.array(img_pil)
     ocr_result = _extract_document(img_np)
     ocr_text = "# EXTRACTED FIELDS\n"  # Fixed string quote
     for field_name, field_value in ocr_result["region_texts"].items():
@@ -81,11 +81,13 @@ async def _process_document_with_ai(document_text, openai_client: OpenAIDep):
 
         CONTEXT:
         1. Process ONLY the text provided in this single request
-        2. For destination country, preserve the EXACT text format - do not separate or modify country names
+        2. Receipt number should have format NP****
+        3. For destination country, preserve the EXACT text format - do not separate or modify country names
         For example, if text contains 'Youyiguan CHINAQuang Binh VIETNAM', return 'Youyiguan CHINA, Quang Binh VIETNAM'
         Do not consider phrases like 'IMPORT AND EXPORT TRADE' as destination countries
-        3. Number of boxes maybe have unit of CARTONS (cartons)
-        4. Export date should be near to phrase: Date of exportation and have format dd/mm/yyyy
+        4. Transportation may be start with by, for example: By Train
+        5. Number of boxes maybe have unit of CARTONS (cartons)
+        6. Export date should be near to phrase: Date of exportation and have format dd/mm/yyyy
 
         Return only a single valid JSON object with the shipping details, without any additional text, comments, or trailing content
 

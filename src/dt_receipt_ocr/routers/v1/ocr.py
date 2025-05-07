@@ -1,3 +1,5 @@
+from PIL import Image
+import pdf2image
 from fastapi import APIRouter, HTTPException
 import httpx
 from dt_receipt_ocr.core import pq7_pipeline
@@ -5,7 +7,9 @@ from dt_receipt_ocr.models import PQ7Response, PQ7Request
 from pydantic import HttpUrl
 from dt_receipt_ocr.deps import HttpClientDep
 from dependency_injector.wiring import inject
+import puremagic
 
+import io
 
 router = APIRouter()
 
@@ -19,12 +23,12 @@ async def url_download(image_url: HttpUrl, http_client: HttpClientDep):
 
 @router.post("/ocr_pq7")
 async def ocr_pq7(request: PQ7Request) -> PQ7Response:
-    if request.file_url.startswith("http"):
+    if request.pq7_url.startswith("http"):
         try:
-            img_bytes = await url_download(request.file_url)
+            file_bytes = await url_download(request.pq7_url)
         except httpx.HTTPStatusError as err:
             raise HTTPException(status_code=err.response.status_code, detail=str(err))
-    elif request.file_url.startswith("s3"):
+    elif request.pq7_url.startswith("s3"):
         raise HTTPException(
             status_code=501,
             detail="S3 URL support is not yet implemented",
@@ -35,8 +39,15 @@ async def ocr_pq7(request: PQ7Request) -> PQ7Response:
             detail="Unsupported file URL scheme. Only 'http(s)' and 's3' are supported.",
         )
 
+    match puremagic.from_string(file_bytes):
+        case ".pdf":
+            images = pdf2image.convert_from_bytes(file_bytes, last_page=1, size=1500)
+            img_pil = images[0]
+        case _:
+            img_pil = Image.open(io.BytesIO(file_bytes))
+
     try:
-        result = await pq7_pipeline.extract(img_bytes)
+        result = await pq7_pipeline.extract(img_pil)
     except Exception as error:
         raise HTTPException(status_code=500, detail=str(error))
 
