@@ -1,4 +1,17 @@
 from openai import OpenAI
+from pydantic import BaseModel
+from enum import Enum
+
+class Receipt(BaseModel):
+    receipt_number: str
+    destination_country: str
+    transportation_mode: str
+    total_weight: str
+    number_of_boxes: str
+    export_date: str
+
+
+json_schema = Receipt.model_json_schema()
 
 def process_document_with_ai(document_text):
     # Initialize the client pointing to your local server
@@ -11,9 +24,34 @@ def process_document_with_ai(document_text):
     response = client.chat.completions.create(
         model="microsoft/Phi-4-mini-instruct",
         messages=[
-            {"role": "system", "content": "You are a helpful assistant."},
-            {"role": "user", "content": f"Extract the following information (P.Q.7 receipt number, Destination country, Transportation mode, Total weight, Number of boxes, Export date) from this document text:\n\n{document_text}"}
-        ]
+        {"role": "system", "content": """You are a helpful assistant. Extract information EXACTLY as it appears in the provided text, without combining with other texts. 
+        Return only a single valid JSON object with the shipping details, without any additional text, comments, or trailing content"""},
+        {"role": "user", "content": f"""
+        Extract ONLY the following fields from the text below and return in json format:
+        - P.Q.7 receipt number
+        - Destination country
+        - Transportation mode
+        - Total weight
+        - Number of boxes
+        - Export date
+
+        CONTEXT:
+        1. Process ONLY the text provided in this single request
+        2. For destination country, preserve the EXACT text format - do not separate or modify country names
+        For example, if text contains 'Youyiguan CHINAQuang Binh VIETNAM', return 'Youyiguan CHINA, Quang Binh VIETNAM'
+        Do not consider phrases like 'IMPORT AND EXPORT TRADE' as destination countries
+        3. Number of boxes maybe have unit of CARTONS (cartons)
+        4. Export date should be near to phrase: Date of exportation and have format dd/mm/yyyy
+
+        Return only a single valid JSON object with the shipping details, without any additional text, comments, or trailing content
+
+        Text to process:
+        {document_text}
+        """}
+    ],
+    temperature=0.2,
+    max_tokens=2048,
+    extra_body={"guided_json": json_schema},
     )
     
     # Return the AI response
