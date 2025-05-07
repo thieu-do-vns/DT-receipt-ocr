@@ -13,10 +13,48 @@ async def extract(img_bytes: bytes):
     ocr_text = "# EXTRACTED FIELDS\n"  # Fixed string quote
     for field_name, field_value in ocr_result["region_texts"].items():
         ocr_text += f"{field_name}: {field_value}\n"  # Changed print() to string concatenation, added newline
+    total_weight = extract_total_weight(flatten_dict_list(ocr_result["region_texts"]))
 
     # Process text with AI
     ai_extraction = await _process_document_with_ai(ocr_text)
+    ai_extraction.total_weight = total_weight
     return ai_extraction
+
+
+def extract_total_weight(bboxes):
+    def is_overlap(bbox1, bbox2):
+        x1, y1, x2, y2 = bbox1
+        x3, y3, x4, y4 = bbox2
+
+        if (x1 <= x3 <= x2 or x1 <= x4 <= x2) and (y2 < y3 or y4 < y1):
+            return True
+        return False
+
+    def is_not_second_row(text):
+        return ".0000" not in text
+
+    potential = []
+    anchor_box = {}
+    unit = ""
+    for i, bbox in enumerate(bboxes):
+        if bbox["text"].lower() == "quantity":
+            potential = bboxes[i:]
+            anchor_box = bboxes[i]
+        if ".0000" in bbox["text"]:
+            unit = bbox["text"]
+
+    for bbox in potential:
+        if (
+            is_overlap(bbox["bbox"], anchor_box["bbox"])
+            and bbox["text"] != anchor_box["text"]
+            and is_not_second_row(bbox["text"])
+        ):
+            return "".join(char for char in bbox["text"] if char.isdigit()) + "," + unit
+    return None
+
+
+def flatten_dict_list(data):
+    return [item for k, v in data.items() for item in v]
 
 
 @inject
@@ -103,7 +141,7 @@ def _extract_regions_from_image(img_np):
         # Middle section for destination and transportation
         "middle": [0, int(height * 0.3), width, int(height * 0.7)],
         # Bottom section for weight, boxes, and export date
-        "bottom": [0, int(height * 0.7), width, height],
+        "bottom": [0, int(height * 0.6), width, height],
     }
 
     # Extract each region
@@ -145,10 +183,10 @@ def _extract_text_from_region(region_img_np, region_name, ocr: OCRDep):
 
             if region_name == "bottom":
                 # update y
-                bbox[0][1] = bbox[0][1] + int(height * 0.7)
-                bbox[1][1] = bbox[1][1] + int(height * 0.7)
-                bbox[2][1] = bbox[2][1] + int(height * 0.7)
-                bbox[3][1] = bbox[3][1] + int(height * 0.7)
+                bbox[0][1] = bbox[0][1] + int(height * 0.6)
+                bbox[1][1] = bbox[1][1] + int(height * 0.6)
+                bbox[2][1] = bbox[2][1] + int(height * 0.6)
+                bbox[3][1] = bbox[3][1] + int(height * 0.6)
 
             # Skip low confidence or very short results
             if confidence < 0.6 or len(text) < 2:
