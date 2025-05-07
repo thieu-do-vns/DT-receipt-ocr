@@ -1,9 +1,8 @@
 from fastapi import APIRouter, HTTPException
-from dt_receipt_ocr.core.runner import extract_pq7
+import httpx
+from dt_receipt_ocr.core import pq7_pipeline
 from dt_receipt_ocr.models import PQ7Response, PQ7Request
-from jaxtyping import UInt8
 from pydantic import HttpUrl
-import cv2
 from dt_receipt_ocr.deps import HttpClientDep
 from dependency_injector.wiring import inject
 
@@ -22,9 +21,8 @@ async def url_download(image_url: HttpUrl, http_client: HttpClientDep):
 async def ocr_pq7(request: PQ7Request) -> PQ7Response:
     try:
         img_bytes = await url_download(request.file_url)
-    except Exception as err:
-        raise HTTPException(status_code=404, detail=f"{type(err)}: {str(err)}")
+    except httpx.HTTPStatusError as err:
+        raise HTTPException(status_code=err.response.status_code, detail=str(err))
 
-    result = extract_pq7(img_bytes)
-
-    return PQ7Response()
+    result = await pq7_pipeline.extract(img_bytes)
+    return result

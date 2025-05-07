@@ -596,7 +596,7 @@ packages:
 - pypi: .
   name: dt-receipt-ocr
   version: 0.1.0
-  sha256: 8e22632b00f35a0921045dfb057b3de34478663ed22afeb12af5effc7f0c76c2
+  sha256: c59abd1b7deacf2cd34baa4fa03c6e5720b16a7e85cb1d8123fec6fe33005193
   requires_dist:
   - dependency-injector>=4.46.0,<5
   - paddleocr>=2.10.0,<3

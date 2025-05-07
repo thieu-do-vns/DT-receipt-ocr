@@ -26,7 +26,9 @@ class Container(containers.DeclarativeContainer):
         drop_score=0.6,
     )
     http_client = providers.Resource(init_http_client)
-    openai_client = providers.Singleton(AsyncOpenAI, base_url=cfg.bas)
+    openai_client = providers.Singleton(
+        AsyncOpenAI, base_url=cfg.openai.base_url, api_key=cfg.openai.api_key
+    )
 
 
 HttpClientDep = Annotated[httpx.AsyncClient, Provide[Container.http_client]]

@@ -1,5 +1,4 @@
 from sqlmodel import SQLModel
-from datetime import date
 from typing import Literal
 
 
@@ -9,9 +8,9 @@ class PQ7Request(SQLModel):
 
 
 class PQ7Response(SQLModel):
-    pq7_receipt_number: str
+    receipt_number: str
     destination_country: str
     transportation_mode: str
     total_weight: str
     number_of_boxes: int
-    export_date: date
+    export_date: str

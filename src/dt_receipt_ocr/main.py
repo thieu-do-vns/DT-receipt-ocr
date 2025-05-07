@@ -1,10 +1,9 @@
 from fastapi import FastAPI
 import hydra
-import dt_receipt_ocr
+import dt_receipt_ocr.core.pq7_pipeline
 from dt_receipt_ocr.deps import Container
 from dt_receipt_ocr.routers.v1 import ocr
 from contextlib import asynccontextmanager
-import dt_receipt_ocr.core.runner
 from omegaconf import OmegaConf
 
 
@@ -14,7 +13,7 @@ async def lifespan(app: FastAPI):
     with hydra.initialize(version_base=None, config_path="conf"):
         cfg = hydra.compose(config_name="main")
     container.cfg.from_dict(OmegaConf.to_object(cfg))
-    container.wire(modules=[ocr, dt_receipt_ocr.core.runner])
+    container.wire(modules=[ocr, dt_receipt_ocr.core.pq7_pipeline])
     await container.init_resources()
 
     yield
