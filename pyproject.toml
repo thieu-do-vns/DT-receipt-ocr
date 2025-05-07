@@ -1,0 +1,26 @@
+[project]
+authors = [{name = "Ky Anh", email = "202909747+anh-pham-vns@users.noreply.github.com"}]
+name = "DT-receipt-ocr"
+requires-python = ">= 3.11"
+version = "0.1.0"
+dependencies = ["dependency-injector>=4.46.0,<5"]
+
+[build-system]
+build-backend = "hatchling.build"
+requires = ["hatchling"]
+
+[tool.pixi.workspace]
+channels = ["conda-forge"]
+platforms = ["osx-arm64"]
+
+[tool.pixi.pypi-dependencies]
+dt_receipt_ocr = { path = ".", editable = true }
+
+[tool.pixi.tasks]
+
+[tool.pixi.dependencies]
+fastapi = ">=0.115.12,<0.116"
+openai = ">=1.77.0,<2"
+sqlmodel = ">=0.0.24,<0.0.25"
+pydantic = ">=2.11.3,<3"
+jaxtyping = ">=0.2.36,<0.3"
