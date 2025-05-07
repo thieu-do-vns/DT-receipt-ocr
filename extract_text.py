@@ -236,7 +236,7 @@ def extract_regions_from_image(image_path):
         'middle': [0, int(height * 0.3), width, int(height * 0.7)],
 
         # Bottom section for weight, boxes, and export date
-        'bottom': [0, int(height * 0.7), width, height]
+        'bottom': [0, int(height * 0.6), width, height]
     }
 
     # Extract each region
@@ -294,10 +294,10 @@ def extract_text_from_region(region_image, region_name):
               
             if region_name == "bottom":
               # update y
-              bbox[0][1] = bbox[0][1] + int(height * 0.7)
-              bbox[1][1] = bbox[1][1] + int(height * 0.7)
-              bbox[2][1] = bbox[2][1] + int(height * 0.7)
-              bbox[3][1] = bbox[3][1] + int(height * 0.7)
+              bbox[0][1] = bbox[0][1] + int(height * 0.6)
+              bbox[1][1] = bbox[1][1] + int(height * 0.6)
+              bbox[2][1] = bbox[2][1] + int(height * 0.6)
+              bbox[3][1] = bbox[3][1] + int(height * 0.6)
 
             # Skip low confidence or very short results
             if confidence < 0.6 or len(text) < 2:
@@ -359,7 +359,7 @@ def extract_fields_by_region(image_path):
 # Main execution
 if __name__ == "__main__":
     # Replace with your image path
-    image_path = "ex2-large-p1.jpeg"
+    image_path = "test_image/image5/ex5-large-p1.jpeg"
     
     # Extract fields by region
     region_texts = extract_fields_by_region(image_path)
