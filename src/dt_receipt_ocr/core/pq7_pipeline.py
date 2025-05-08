@@ -6,6 +6,7 @@ from dt_receipt_ocr.deps.container import OCRDep, OpenAIDep
 from dt_receipt_ocr.models.ocr import PQ7Response
 from PIL.Image import Image
 
+import cv2
 
 async def extract(img_pil: Image):
     img_np = np.array(img_pil)
