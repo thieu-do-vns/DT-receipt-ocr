@@ -139,7 +139,7 @@ def _extract_regions_from_image(img_np):
     # Format: [x_start, y_start, x_end, y_end]
     regions = {
         # Upper right corner for Form P.Q.7 and receipt number
-        "upper_right": [int(width * 0.6), 0, width, int(height * 0.3)],
+        "upper_right": [int(width * 0.3), 0, width, int(height * 0.3)],
         # Middle section for destination and transportation
         "middle": [0, int(height * 0.3), width, int(height * 0.7)],
         # Bottom section for weight, boxes, and export date
@@ -172,10 +172,10 @@ def _extract_text_from_region(region_img_np, region_name, ocr: OCRDep):
 
             if region_name == "upper_right":
                 # update min_x bbox[0] -> (min_x, min_y)
-                bbox[0][0] = bbox[0][0] + int(width * 0.6)
-                bbox[1][0] = bbox[1][0] + int(width * 0.6)
-                bbox[2][0] = bbox[2][0] + int(width * 0.6)
-                bbox[3][0] = bbox[3][0] + int(width * 0.6)
+                bbox[0][0] = bbox[0][0] + int(width * 0.3)
+                bbox[1][0] = bbox[1][0] + int(width * 0.3)
+                bbox[2][0] = bbox[2][0] + int(width * 0.3)
+                bbox[3][0] = bbox[3][0] + int(width * 0.3)
             if region_name == "middle":
                 # update min_y
                 bbox[0][1] = bbox[0][1] + int(height * 0.3)

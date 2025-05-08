@@ -230,7 +230,7 @@ def extract_regions_from_image(image_path):
     # Format: [x_start, y_start, x_end, y_end]
     regions = {
         # Upper right corner for Form P.Q.7 and receipt number
-        'upper_right': [int(width * 0.6), 0, width, int(height * 0.3)],
+        'upper_right': [int(width * 0.3), 0, width, int(height * 0.3)],
 
         # Middle section for destination and transportation
         'middle': [0, int(height * 0.3), width, int(height * 0.7)],
@@ -316,7 +316,8 @@ def extract_text_from_region(region_image, region_name):
 
     # Clean up temporary file
     if os.path.exists(temp_region_path):
-        os.remove(temp_region_path)
+        # os.remove(temp_region_path)
+        pass
 
     # Sort results by position (top to bottom, then left to right)
     region_text.sort(key=lambda x: (sum([p[1] for p in x['bbox']]) / 4, sum([p[0] for p in x['bbox']]) / 4))
@@ -359,7 +360,8 @@ def extract_fields_by_region(image_path):
 # Main execution
 if __name__ == "__main__":
     # Replace with your image path
-    image_path = "test_image/image5/ex5-large-p1.jpeg"
+    # image_path = "test_image/image5/ex5-large-p1.jpeg"
+    image_path = "rotate.jpg"
     
     # Extract fields by region
     region_texts = extract_fields_by_region(image_path)
