@@ -16,9 +16,9 @@ class Container(containers.DeclarativeContainer):
     cfg = providers.Configuration()
     ocr = providers.Singleton(
         PaddleOCR,
-        use_angle_cls=True,
+        use_angle_cls=False,
         lang="en",
-        use_gpu=False,
+        use_gpu=True,
         det_db_thresh=0.3,
         det_db_box_thresh=0.5,
         det_db_unclip_ratio=1.8,

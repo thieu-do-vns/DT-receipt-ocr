@@ -2,7 +2,7 @@ from sqlmodel import SQLModel
 
 
 class PQ7Request(SQLModel):
-    pq7_url: str
+    file_url: str
 
 
 class PQ7Response(SQLModel):
