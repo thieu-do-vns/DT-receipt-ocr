@@ -9,31 +9,31 @@ import json
 from extract_text import extract_all_english_text, filter_specific_fields, extract_regions_from_image, extract_text_from_region
 
 def extract_total_weight(bboxes):
-  potential = []
-  anchor_box = []
-  res = []
-  unit = ''
-  for i, bbox in enumerate(bboxes):
-    if bbox['text'].lower() == 'quantity':
-      potential = bboxes[i:]
-      anchor_box = bboxes[i]
-    if '.0000' in bbox['text']:
-      unit = bbox['text']
+    potential = []
+    anchor_box = []
+    res = []
+    unit = ''
+    for i, bbox in enumerate(bboxes):
+        if bbox['text'].lower() == 'quantity':
+            potential = bboxes[i:]
+            anchor_box = bboxes[i]
+        if '.0000' in bbox['text']:
+            unit = bbox['text']
 
-  for bbox in potential:
-    if is_overlap(bbox['bbox'], anchor_box['bbox']) and bbox['text'] != anchor_box['text'] and is_not_second_row(bbox['text']):
-      return ''.join(char for char in bbox['text'] if char.isdigit()) + ',' + unit
-  return None
+    for bbox in potential:
+        if is_overlap(bbox['bbox'], anchor_box['bbox']) and bbox['text'] != anchor_box['text'] and is_not_second_row(bbox):
+            return ''.join(char for char in bbox['text'] if char.isdigit()) + ',' + unit
+    return ''
 
 def is_overlap(bbox1, bbox2):
-  x1, y1, x2, y2 = bbox1
-  x3, y3, x4, y4 = bbox2
+    x1, y1, x2, y2 = bbox1
+    x3, y3, x4, y4 = bbox2
 
-  if (x1 <= x3 <= x2 or x1 <= x4 <= x2) and (y2 < y3 or y4 < y1):
-    return True
-  return False
+    if (x1 <= x3 <= x2 or x1 <= x4 <= x2) and (y2 < y3 or y4 < y1):
+        return True
+    return False
 
-def is_not_second_row(bbox['text']):
+def is_not_second_row(bbox):
     return '.0000' not in bbox['text']
 
 def flatten_dict_list(data):
@@ -150,14 +150,16 @@ def extract_document(image: str, use_regions: bool = True) -> Dict[str, Any]:
         Dictionary containing extracted fields and raw text
     """
     try:
-        # Check if input is URL or base64
-        parsed_url = urlparse(image)
-        if parsed_url.scheme and parsed_url.netloc:
-            # It's a URL
-            local_path = download_image_from_url(image)
-        else:
-            # Assume it's a base64 string
-            local_path = save_base64_image(image)
+        # # Check if input is URL or base64
+        # parsed_url = urlparse(image)
+        # if parsed_url.scheme and parsed_url.netloc:
+        #     # It's a URL
+        #     local_path = download_image_from_url(image)
+        # else:
+        #     # Assume it's a base64 string
+        #     local_path = save_base64_image(image)
+
+        local_path = image
             
         result = {
             'status': 'success',
@@ -269,7 +271,7 @@ def extract_info(image: str):
 # Main execution
 if __name__ == "__main__":
     # Replace with your image path
-    image_path = "test_image/image5/ex5-large-p1.jpeg"
+    image_path = "ocr_test_4_page-0001.jpg"
     
     # Extract fields by region
     region_texts = extract_info(image_path)
