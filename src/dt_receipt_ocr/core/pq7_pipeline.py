@@ -50,7 +50,7 @@ def extract_total_weight(bboxes):
             and is_not_second_row(bbox["text"])
         ):
             return "".join(char for char in bbox["text"] if char.isdigit()) + "," + unit
-    return None
+    return ""
 
 
 def flatten_dict_list(data):
