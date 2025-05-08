@@ -12,3 +12,4 @@ class PQ7Response(SQLModel):
     total_weight: str
     number_of_boxes: int
     export_date: str
+    is_blur: bool = None

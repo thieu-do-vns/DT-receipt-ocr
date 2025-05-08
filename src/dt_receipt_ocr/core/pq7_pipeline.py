@@ -9,6 +9,19 @@ from PIL.Image import Image
 
 async def extract(img_pil: Image):
     img_np = np.array(img_pil)
+
+    if detect_blur(img_pil)[0]:
+        return PQ7Response(
+            receipt_number = '',
+            destination_country = '',
+            transportation_mode = '',
+            total_weight = '',
+            number_of_boxes = 0,
+            export_date = '',
+            is_blur = True
+            )
+
+    enhance_img = enhance_image(img_np)
     ocr_result = _extract_document(img_np)
     ocr_text = "# EXTRACTED FIELDS\n"  # Fixed string quote
     for field_name, field_value in ocr_result["region_texts"].items():
@@ -18,7 +31,65 @@ async def extract(img_pil: Image):
     # Process text with AI
     ai_extraction = await _process_document_with_ai(ocr_text)
     ai_extraction.total_weight = total_weight
+    ai_extraction.is_blur = False
     return ai_extraction
+
+
+def enhance_image(img_np):
+    """
+    Preprocess an overexposed image to balance colors and improve readability.
+    
+    Args:
+        image_path (str): Path to the input image
+        output_path (str): Path to save the processed image
+    """
+    
+    if img is None:
+        raise FileNotFoundError(f"Could not read image at {image_path}")
+    
+    img = cv2.cvtColor(np.array(img_np), cv2.COLOR_RGB2BGR)
+
+    # Apply Gaussian blur to reduce noise
+    blurred = cv2.GaussianBlur(img, (3, 3), 0)
+    
+    # Convert to LAB color space (better for color adjustments)
+    lab = cv2.cvtColor(blurred, cv2.COLOR_BGR2LAB)
+    l, a, b = cv2.split(lab)
+    
+    # Apply CLAHE (Contrast Limited Adaptive Histogram Equalization) to L channel
+    clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
+    l_clahe = clahe.apply(l)
+    
+    # Merge the CLAHE enhanced L-channel back with the a and b channels
+    enhanced_lab = cv2.merge((l_clahe, a, b))
+    
+    # Convert back to BGR color space
+    enhanced_img = cv2.cvtColor(enhanced_lab, cv2.COLOR_LAB2RGB)
+    
+    return enhanced_img
+
+def detect_blur(img_np, threshold=100):
+    """
+    Detect if an image is blurry using the Laplacian variance method.
+    
+    Args:
+        threshold (float): Threshold value to determine blur (lower means more sensitive)
+    
+    Returns:
+        tuple: (is_blurry, laplacian_variance)
+    """
+    
+    # Convert to grayscale
+    gray = cv2.cvtColor(img_np, cv2.COLOR_RGB2GRAY)
+    
+    # Calculate the Laplacian of the image and compute the variance
+    laplacian = cv2.Laplacian(gray, cv2.CV_64F)
+    laplacian_variance = laplacian.var()
+    
+    # Determine if the image is blurry based on the variance
+    is_blurry = laplacian_variance < threshold
+    
+    return is_blurry, laplacian_variance
 
 
 def extract_total_weight(bboxes):
