@@ -43,10 +43,7 @@ def enhance_image(img_np):
         image_path (str): Path to the input image
         output_path (str): Path to save the processed image
     """
-    
-    if img is None:
-        raise FileNotFoundError(f"Could not read image at {image_path}")
-    
+     
     img = cv2.cvtColor(np.array(img_np), cv2.COLOR_RGB2BGR)
 
     # Apply Gaussian blur to reduce noise
@@ -63,7 +60,7 @@ def enhance_image(img_np):
     # Merge the CLAHE enhanced L-channel back with the a and b channels
     enhanced_lab = cv2.merge((l_clahe, a, b))
     
-    # Convert back to BGR color space
+    # Convert back to RGB color space
     enhanced_img = cv2.cvtColor(enhanced_lab, cv2.COLOR_LAB2RGB)
     
     return enhanced_img
