@@ -23,7 +23,9 @@ async def extract(img_pil: Image):
             )
 
     enhance_img = enhance_image(img_np)
-    ocr_result = _extract_document(img_np)
+    ocr_result = _extract_document(enhance_img)
+    # cv2.imwrite('normal_image.jpg', img_np)
+    # cv2.imwrite('enhance_image.jpg', enhance_img)
     ocr_text = "# EXTRACTED FIELDS\n"  # Fixed string quote
     for field_name, field_value in ocr_result["region_texts"].items():
         ocr_text += f"{field_name}: {field_value}\n"  # Changed print() to string concatenation, added newline
@@ -129,8 +131,12 @@ def flatten_dict_list(data):
 @inject
 async def _process_document_with_ai(document_text, openai_client: OpenAIDep):
     # Make the API call
+    
+    print("Document text", document_text)
+    
     response = await openai_client.beta.chat.completions.parse(
-        model="RedHatAI/Mistral-Small-3.1-24B-Instruct-2503-quantized.w4a16",
+        # model="RedHatAI/Mistral-Small-3.1-24B-Instruct-2503-quantized.w4a16",
+        model = "Qwen3",
         messages=[
             {
                 "role": "system",
@@ -151,12 +157,14 @@ async def _process_document_with_ai(document_text, openai_client: OpenAIDep):
         CONTEXT:
         1. Process ONLY the text provided in this single request
         2. Receipt number should have format NP****
-        3. For destination country, preserve the EXACT text format - do not separate or modify country names
-        For example, if text contains 'Youyiguan CHINAQuang Binh VIETNAM', return 'Youyiguan CHINA, Quang Binh VIETNAM'
+        3. The destination coutry text will be near to phrase: City and country of destination. 
+        It can be more than 1 country. Please preserve the EXACT text format, it maybe countain other level of geography, for example YouyiguanCHINA
+        4. If the country name is lack of letters, let modify it to right name
+        For example, if text contains 'CHNA' you have to transform it to "CHINA"
         Do not consider phrases like 'IMPORT AND EXPORT TRADE' as destination countries
-        4. Transportation may be start with by, for example: By Train
-        5. Number of boxes maybe have unit of CARTONS (cartons)
-        6. Export date should be near to phrase: Date of exportation and have format dd/mm/yyyy
+        5. Transportation may be start with by, for example: By Train
+        6. Number of boxes maybe have unit of CARTONS (cartons)
+        7. Export date should be near to phrase: Date of exportation and have format dd/mm/yyyy
 
         Return only a single valid JSON object with the shipping details, without any additional text, comments, or trailing content
 
@@ -166,7 +174,7 @@ async def _process_document_with_ai(document_text, openai_client: OpenAIDep):
             },
         ],
         temperature=0.2,
-        max_tokens=2048,
+        max_tokens=3096,
         response_format=PQ7Response,
     )
 
@@ -270,7 +278,7 @@ def _extract_text_from_region(region_img_np, region_name, ocr: OCRDep):
             ):  # Skip if more than 50% non-Latin characters
                 continue
 
-            region_text.append({"text": text, "confidence": confidence, "bbox": bbox})
+            region_text.append({"text": text, "bbox": bbox})
 
     # Sort results by position (top to bottom, then left to right)
     region_text.sort(
