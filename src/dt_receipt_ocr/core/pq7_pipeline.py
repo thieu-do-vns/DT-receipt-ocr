@@ -34,6 +34,7 @@ async def extract(img_pil: Image):
     # Process text with AI
     ai_extraction = await _process_document_with_ai(ocr_text)
     ai_extraction.total_weight = total_weight
+
     pq7_response = PQ7Response(**ai_extraction.model_dump())
     return pq7_response
 
@@ -67,6 +68,7 @@ def enhance_image(img_np):
     enhanced_img = cv2.cvtColor(enhanced_lab, cv2.COLOR_LAB2RGB)
     
     return enhanced_img
+    
 
 def detect_blur(img_np, threshold=100):
     """
@@ -233,15 +235,18 @@ def _extract_regions_from_image(img_np):
         region_images[region_name] = img_np[y_start:y_end, x_start:x_end].copy()
 
         # # Save region for debugging (optional)
-        # cv2.imwrite(f"region_{region_name}.jpg", region_images[region_name])
+        # cv2.imwrite(f"region_{region_name}_api.jpg", region_images[region_name])
 
     return region_images
 
 
 @inject
 def _extract_text_from_region(region_img_np, region_name, ocr: OCRDep):
-    results = ocr.ocr(region_img_np, cls=True)
 
+    temp_region_path = f"temp_{region_name}_api.jpg"
+    # cv2.imwrite(temp_region_path, region_img_np)
+  
+    results = ocr.ocr(region_img_np[...,::-1], cls=True)
     height, width = region_img_np.shape[:2]
 
     # Process results

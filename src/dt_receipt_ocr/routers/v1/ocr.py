@@ -2,8 +2,8 @@ from PIL import Image, ImageOps
 import pdf2image
 from fastapi import APIRouter, HTTPException
 import httpx
-from dt_receipt_ocr.core import pq7_pipeline
-from dt_receipt_ocr.models import PQ7Response, PQ7Request
+from dt_receipt_ocr.core import pq7_pipeline, utils
+from dt_receipt_ocr.models import PQ7Response, PQ7Request, PQ7ModelResponse
 from pydantic import HttpUrl
 from dt_receipt_ocr.deps import HttpClientDep
 from dependency_injector.wiring import inject
@@ -12,7 +12,6 @@ import puremagic
 import io
 
 router = APIRouter()
-
 
 @inject
 async def url_download(image_url: HttpUrl, http_client: HttpClientDep):
@@ -49,6 +48,13 @@ async def ocr_pq7(request: PQ7Request) -> PQ7Response:
 
     try:
         result = await pq7_pipeline.extract(img_pil)
+        if utils.is_missing_field_pq7_response(result):
+            raise HTTPException(
+                status_code=422,
+                detail={
+                    "error_code": "PQ7_MISSING_FIELDS",
+                }
+            )   
     except Exception as error:
         raise HTTPException(status_code=500, detail=str(error))
 
