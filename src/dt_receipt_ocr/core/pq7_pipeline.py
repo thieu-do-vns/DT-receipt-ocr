@@ -43,7 +43,7 @@ async def extract(img_pil: Image):
 def post_process_ai_response(ai_extraction: PQ7ModelResponse):
     if ('**' in ai_extraction.receipt_number):
         ai_extraction.receipt_number = ""
-    if ('by' not in ai_extraction.transportation_mode):
+    if ('by' not in ai_extraction.transportation_mode.lower()):
         ai_extraction.transportation_mode = ""
     country = ai_extraction.destination_country.lower()
     if ("vietnam" not in country) and ("china" not in country) and ("lao" not in country) and ("campuchia") not in country:
