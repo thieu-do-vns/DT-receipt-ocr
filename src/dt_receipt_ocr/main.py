@@ -23,4 +23,4 @@ async def lifespan(app: FastAPI):
 
 
 api = FastAPI(lifespan=lifespan)
-api.include_router(ocr.router, prefix="/v1")
+api.include_router(ocr.router, prefix="/dt")
