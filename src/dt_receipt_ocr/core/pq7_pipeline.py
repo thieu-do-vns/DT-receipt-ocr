@@ -35,9 +35,20 @@ async def extract(img_pil: Image):
     ai_extraction = await _process_document_with_ai(ocr_text)
     ai_extraction.total_weight = total_weight
 
+    ai_extraction = post_process_ai_response(ai_extraction)
+
     pq7_response = PQ7Response(**ai_extraction.model_dump())
     return pq7_response
 
+def post_process_ai_response(ai_extraction: PQ7ModelResponse):
+    if ('**' in ai_extraction.receipt_number):
+        ai_extraction.receipt_number = ""
+    if ('by' not in ai_extraction.transportation_mode):
+        ai_extraction.transportation_mode = ""
+    country = ai_extraction.destination_country.lower()
+    if ("vietnam" not in country) and ("china" not in country) and ("lao" not in country) and ("campuchia") not in country:
+        ai_extraction.destination_country = ""
+    return ai_extraction
 
 def enhance_image(img_np):
     """
@@ -167,7 +178,7 @@ async def _process_document_with_ai(document_text, openai_client: OpenAIDep):
         3. For transportation_mode: Look for phrases starting with "by" (e.g., "By Train")
         4. For number_of_boxes: Look for numeric values, may include unit "CARTONS" or "cartons"
         5. For export_date: Find date near phrase "Date of exportation" in format dd/mm/yyyy
-
+        6. **If you can not find any suitable information, let this field empty**
         Return ONLY the JSON object without additional text, comments, or explanations.
 
         TEXT TO PROCESS:

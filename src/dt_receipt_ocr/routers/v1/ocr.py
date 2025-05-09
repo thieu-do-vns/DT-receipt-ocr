@@ -48,7 +48,7 @@ async def ocr_pq7(request: PQ7Request) -> PQ7Response:
 
     try:
         result = await pq7_pipeline.extract(img_pil)
-        if utils.is_missing_field_pq7_response(result) and not result.is_blur:
+        if (utils.is_missing_field_pq7_response(result) and not result.is_blur) or result.receipt_number == '':
             raise HTTPException(
                 status_code=422,
                 detail={
