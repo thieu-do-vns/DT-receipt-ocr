@@ -36,6 +36,8 @@ puremagic = ">=1.29,<2"
 fsspec = ">=2025.3.2,<2026"
 s3fs = ">=2025.3.2,<2026"
 paddlepaddle = ">=3.0.0,<4"
+jupyterlab = ">=4.4.2,<5"
+matplotlib = ">=3.10.1,<4"
 
 [tool.pixi.feature.paddle.dependencies]
 ccache = "*"

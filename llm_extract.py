@@ -9,6 +9,7 @@ class Receipt(BaseModel):
     total_weight: str
     number_of_boxes: str
     export_date: str
+    is_blur: bool = None
 
 
 json_schema = Receipt.model_json_schema()
@@ -16,13 +17,13 @@ json_schema = Receipt.model_json_schema()
 def process_document_with_ai(document_text):
     # Initialize the client pointing to your local server
     client = OpenAI(
-        base_url="http://43.218.227.242:8000/v1",
-        api_key="hello-from-vns"  #
+        base_url="",
+        api_key=""  #
     )
     
     # Make the API call
     response = client.chat.completions.create(
-        model="RedHatAI/Mistral-Small-3.1-24B-Instruct-2503-quantized.w4a16",
+        model="Qwen3",
         messages=[
         {"role": "system", "content": """You are a helpful assistant. Extract information EXACTLY as it appears in the provided text, without combining with other texts. 
         Return only a single valid JSON object with the shipping details, without any additional text, comments, or trailing content"""},

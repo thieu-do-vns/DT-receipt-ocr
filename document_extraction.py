@@ -271,7 +271,9 @@ def extract_info(image: str):
 # Main execution
 if __name__ == "__main__":
     # Replace with your image path
-    image_path = "ocr_test_4_page-0001.jpg"
+    # image_path = "ocr_test_4_page-0001.jpg"
+    image_path = 'rotate.jpg'
+    # image_path = 'processed_certificate.jpg'
     
     # Extract fields by region
     region_texts = extract_info(image_path)

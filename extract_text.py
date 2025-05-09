@@ -4,6 +4,7 @@ import numpy as np
 from paddleocr import PaddleOCR
 import re
 import concurrent.futures
+from image_utils import preprocess_overexposed_image
 
 # Initialize PaddleOCR with English language model
 ocr = PaddleOCR(
@@ -220,6 +221,7 @@ def extract_regions_from_image(image_path):
     """
     # Read the original image
     image = cv2.imread(image_path)
+    # image = preprocess_overexposed_image(image_path)
     if image is None:
         raise ValueError(f"Could not read image at {image_path}")
 
@@ -246,7 +248,7 @@ def extract_regions_from_image(image_path):
         region_images[region_name] = image[y_start:y_end, x_start:x_end].copy()
 
         # # Save region for debugging (optional)
-        # cv2.imwrite(f"region_{region_name}.jpg", region_images[region_name])
+        cv2.imwrite(f"region_{region_name}.jpg", region_images[region_name])
 
     return region_images
 
@@ -268,7 +270,7 @@ def extract_text_from_region(region_image, region_name):
     cv2.imwrite(temp_region_path, region_image)
 
     # Get OCR results
-    results = ocr.ocr(temp_region_path, cls=True)
+    results = ocr.ocr(region_image, cls=True)
     height, width = region_image.shape[:2]
 
     # Process results
@@ -281,10 +283,10 @@ def extract_text_from_region(region_image, region_name):
             
             if region_name == "upper_right":
               # update min_x bbox[0] -> (min_x, min_y)
-              bbox[0][0] = bbox[0][0] + int(width * 0.6)
-              bbox[1][0] = bbox[1][0] + int(width * 0.6)
-              bbox[2][0] = bbox[2][0] + int(width * 0.6)
-              bbox[3][0] = bbox[3][0] + int(width * 0.6)
+              bbox[0][0] = bbox[0][0] + int(width * 0.3)
+              bbox[1][0] = bbox[1][0] + int(width * 0.3)
+              bbox[2][0] = bbox[2][0] + int(width * 0.3)
+              bbox[3][0] = bbox[3][0] + int(width * 0.3)
             if region_name == "middle":
               # update min_y 
               bbox[0][1] = bbox[0][1] + int(height * 0.3)

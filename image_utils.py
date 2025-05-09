@@ -31,11 +31,7 @@ def detect_blur(image_path, threshold=100):
     
     return is_blurry, laplacian_variance
 
-
-import cv2
-import numpy as np
-
-def preprocess_overexposed_image(image_path, output_path):
+def preprocess_overexposed_image(image_path):
     """
     Preprocess an overexposed image to balance colors and improve readability.
     
