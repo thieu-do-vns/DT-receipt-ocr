@@ -3,7 +3,7 @@ import numpy as np
 from jaxtyping import UInt8
 
 from dt_receipt_ocr.deps.container import OCRDep, OpenAIDep
-from dt_receipt_ocr.models.ocr import PQ7Response
+from dt_receipt_ocr.models.ocr import PQ7Response, PQ7ModelResponse
 from PIL.Image import Image
 
 import cv2
@@ -23,7 +23,7 @@ async def extract(img_pil: Image):
             )
 
     enhance_img = enhance_image(img_np)
-    ocr_result = _extract_document(enhance_img)
+    ocr_result = _extract_document(img_np)
     # cv2.imwrite('normal_image.jpg', img_np)
     # cv2.imwrite('enhance_image.jpg', enhance_img)
     ocr_text = "# EXTRACTED FIELDS\n"  # Fixed string quote
@@ -34,8 +34,8 @@ async def extract(img_pil: Image):
     # Process text with AI
     ai_extraction = await _process_document_with_ai(ocr_text)
     ai_extraction.total_weight = total_weight
-    ai_extraction.is_blur = False
-    return ai_extraction
+    pq7_response = PQ7Response(**ai_extraction.model_dump())
+    return pq7_response
 
 
 def enhance_image(img_np):
@@ -139,43 +139,46 @@ async def _process_document_with_ai(document_text, openai_client: OpenAIDep):
         model = "Qwen3",
         messages=[
             {
-                "role": "system",
-                "content": """You are a helpful assistant. Extract information EXACTLY as it appears in the provided text, without combining with other texts.
-        Return only a single valid JSON object with the shipping details, without any additional text, comments, or trailing content""",
+            "role": "system",
+            "content": """You are a helpful assistant. Extract information EXACTLY as it appears in the provided text, without combining with other texts.
+            Return only a single valid JSON object with the shipping details, without any additional text, comments, or trailing content /no_think""",
             },
             {
                 "role": "user",
                 "content": f"""
-        Extract ONLY the following fields from the text below and return in json format:
-        - P.Q.7 receipt number
-        - Destination country
-        - Transportation mode
-        - Total weight
-        - Number of boxes
-        - Export date
+        Extract shipping details from the text below and return ONLY a valid JSON object with these fields:
+        - "receipt_number": The P.Q.7 receipt number (format NP****)
+        - "destination_countries": Country/countries of destination as a single string
+        - "transportation_mode": Method of transport
+        - "total_weight": Total weight of shipment
+        - "number_of_boxes": Number of boxes/cartons
+        - "export_date": Date of exportation (format dd/mm/yyyy)
 
-        CONTEXT:
-        1. Process ONLY the text provided in this single request
-        2. Receipt number should have format NP****
-        3. The destination coutry text will be near to phrase: City and country of destination. 
-        It can be more than 1 country. Please preserve the EXACT text format, it maybe countain other level of geography, for example YouyiguanCHINA
-        4. If the country name is lack of letters, let modify it to right name
-        For example, if text contains 'CHNA' you have to transform it to "CHINA"
-        Do not consider phrases like 'IMPORT AND EXPORT TRADE' as destination countries
-        5. Transportation may be start with by, for example: By Train
-        6. Number of boxes maybe have unit of CARTONS (cartons)
-        7. Export date should be near to phrase: Date of exportation and have format dd/mm/yyyy
+        EXTRACTION RULES:
+        1. For receipt_number: Look for number with format NP****
+        2. For destination_countries: Find text near "City and country of destination"
+        - Return as a SINGLE STRING, preserving the EXACT original format
+        - Include all geographical details (provinces, cities, etc.) exactly as written
+        - **If multiple countries are listed, include them all in the same string (e.g., "Youyiguan CHINA, Quang Binh VIENAM, Thakhek LAO PEOPLE")**
+        - **Correct misspelled country names (e.g., "CHNA" → "CHINA")**
+        - Ignore phrases like "IMPORT AND EXPORT TRADE"
+        3. For transportation_mode: Look for phrases starting with "by" (e.g., "By Train")
+        4. For number_of_boxes: Look for numeric values, may include unit "CARTONS" or "cartons"
+        5. For export_date: Find date near phrase "Date of exportation" in format dd/mm/yyyy
 
-        Return only a single valid JSON object with the shipping details, without any additional text, comments, or trailing content
+        Return ONLY the JSON object without additional text, comments, or explanations.
 
-        Text to process:
+        TEXT TO PROCESS:
         {document_text}
         """,
             },
         ],
         temperature=0.2,
         max_tokens=3096,
-        response_format=PQ7Response,
+        response_format=PQ7ModelResponse,
+        extra_body = {
+            "chat_template_kwargs": {"enable_thinking": False}
+        }
     )
 
     # Return the AI response
