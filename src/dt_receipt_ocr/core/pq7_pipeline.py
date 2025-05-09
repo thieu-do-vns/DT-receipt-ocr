@@ -48,6 +48,7 @@ def post_process_ai_response(ai_extraction: PQ7ModelResponse):
     country = ai_extraction.destination_country.lower()
     if ("vietnam" not in country) and ("china" not in country) and ("lao" not in country) and ("campuchia") not in country:
         ai_extraction.destination_country = ""
+    ai_extraction.receipt_number = ai_extraction.receipt_number.split("NP", 1)[1]
     return ai_extraction
 
 def enhance_image(img_np):
