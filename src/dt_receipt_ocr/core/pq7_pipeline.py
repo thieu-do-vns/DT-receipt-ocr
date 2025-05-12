@@ -7,6 +7,7 @@ from dt_receipt_ocr.models.ocr import PQ7Response, PQ7ModelResponse
 from PIL.Image import Image
 
 import cv2
+import re
 
 async def extract(img_pil: Image):
     img_np = np.array(img_pil)
@@ -48,7 +49,8 @@ def post_process_ai_response(ai_extraction: PQ7ModelResponse):
     country = ai_extraction.destination_country.lower()
     if ("vietnam" not in country) and ("china" not in country) and ("lao" not in country) and ("campuchia") not in country:
         ai_extraction.destination_country = ""
-    ai_extraction.receipt_number = ai_extraction.receipt_number.split("NP", 1)[1]
+    if re.search(r'NP\d+', ai_extraction.receipt_number, re.IGNORECASE):
+            ai_extraction.receipt_number = re.search(r'NP\d+', ai_extraction.receipt_number, re.IGNORECASE).group()
     return ai_extraction
 
 def enhance_image(img_np):
