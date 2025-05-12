@@ -48,9 +48,10 @@ async def extract(img_pil: Image):
     return pq7_response
 
 def post_process_ai_response(ai_extraction: PQ7ModelResponse):
+    tranport_mode = ai_extraction.transportation_mode.lower()
     if ('**' in ai_extraction.receipt_number):
         ai_extraction.receipt_number = ""
-    if ('by' not in ai_extraction.transportation_mode.lower()):
+    if ('by' not in tranport_mode) and ('truck' not in tranport_mode):
         ai_extraction.transportation_mode = ""
     country = ai_extraction.destination_country.lower()
     if ("vietnam" not in country) and ("china" not in country) and ("lao" not in country) and ("campuchia") not in country:
@@ -252,7 +253,7 @@ def _extract_regions_from_image(img_np):
         # Upper right corner for Form P.Q.7 and receipt number
         "upper_right": [int(width * 0.5), 0, width, int(height * 0.3)],
         # Middle section for destination and transportation
-        "middle": [0, int(height * 0.3), width, int(height * 0.7)],
+        "middle": [0, int(height * 0.2), width, int(height * 0.7)],
         # Bottom section for weight, boxes, and export date
         "bottom": [0, int(height * 0.6), width, height],
     }
@@ -292,10 +293,10 @@ def _extract_text_from_region(region_img_np, region_name, ocr: OCRDep):
                 bbox[3][0] = bbox[3][0] + int(width * 0.5)
             if region_name == "middle":
                 # update min_y
-                bbox[0][1] = bbox[0][1] + int(height * 0.3)
-                bbox[1][1] = bbox[1][1] + int(height * 0.3)
-                bbox[2][1] = bbox[2][1] + int(height * 0.3)
-                bbox[3][1] = bbox[3][1] + int(height * 0.3)
+                bbox[0][1] = bbox[0][1] + int(height * 0.2)
+                bbox[1][1] = bbox[1][1] + int(height * 0.2)
+                bbox[2][1] = bbox[2][1] + int(height * 0.2)
+                bbox[3][1] = bbox[3][1] + int(height * 0.2)
 
             if region_name == "bottom":
                 # update y
