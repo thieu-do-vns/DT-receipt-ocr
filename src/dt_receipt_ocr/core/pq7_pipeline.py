@@ -31,10 +31,16 @@ async def extract(img_pil: Image):
     for field_name, field_value in ocr_result["region_texts"].items():
         ocr_text += f"{field_name}: {field_value}\n"  # Changed print() to string concatenation, added newline
     total_weight = extract_total_weight(flatten_dict_list(ocr_result["region_texts"]))
+    export_date = extract_epxorted_date(ocr_result['region_texts']['middle'])
+
+    print(export_date)
 
     # Process text with AI
     ai_extraction = await _process_document_with_ai(ocr_text)
     ai_extraction.total_weight = total_weight
+    ai_extraction.export_date = export_date
+
+    print(ai_extraction)
 
     ai_extraction = post_process_ai_response(ai_extraction)
 
@@ -107,6 +113,17 @@ def detect_blur(img_np, threshold=100):
     
     return is_blurry, laplacian_variance
 
+def extract_epxorted_date(bboxes):
+    # Pattern để trích xuất định dạng dd/mm/yyyy
+    pattern = r'\d{2}/\d{2}/\d{4}'
+    
+    # Tìm tất cả các kết quả khớp
+    for box in bboxes:
+        dates_found = re.findall(pattern, box['text'])
+        if dates_found:
+            print(f"Tìm thấy {len(dates_found)} ngày tháng:")
+            return dates_found[0]
+    return ""
 
 def extract_total_weight(bboxes):
     def is_overlap(bbox1, bbox2):
@@ -168,7 +185,7 @@ async def _process_document_with_ai(document_text, openai_client: OpenAIDep):
         - "transportation_mode": Method of transport
         - "total_weight": Total weight of shipment
         - "number_of_boxes": Number of boxes/cartons
-        - "export_date": Date of exportation (format dd/mm/yyyy)
+        - "export_date"
 
         EXTRACTION RULES:
         1. For receipt_number: Look for number with format NP****
@@ -177,10 +194,11 @@ async def _process_document_with_ai(document_text, openai_client: OpenAIDep):
         - Include all geographical details (provinces, cities, etc.) exactly as written
         - **If multiple countries are listed, include them all in the same string (e.g., "Youyiguan CHINA, Quang Binh VIENAM, Thakhek LAO PEOPLE")**
         - **Correct misspelled country names (e.g., "CHNA" → "CHINA")**
+        - Destination country should not be Thailand
         - Ignore phrases like "IMPORT AND EXPORT TRADE"
-        3. For transportation_mode: Look for phrases starting with "by" (e.g., "By Train")
+        3. For transportation_mode: Look for phrases starting with "by" (e.g., "By Train", "By Truck", "By Truck and Railway")
         4. For number_of_boxes: Look for numeric values, may include unit "CARTONS" or "cartons"
-        5. For export_date: Find date near phrase "Date of exportation" in format dd/mm/yyyy
+        5. For export_date: For export_date: Find date near phrase "Date of exportation" and in middle or bottom keyword part. It have format dd/mm/yyyy
         6. **If you can not find any suitable information, let this field empty**
         Return ONLY the JSON object without additional text, comments, or explanations.
 
@@ -191,10 +209,7 @@ async def _process_document_with_ai(document_text, openai_client: OpenAIDep):
         ],
         temperature=0.2,
         max_tokens=3096,
-        response_format=PQ7ModelResponse,
-        extra_body = {
-            "chat_template_kwargs": {"enable_thinking": False}
-        }
+        response_format=PQ7ModelResponse
     )
 
     # Return the AI response
@@ -235,7 +250,7 @@ def _extract_regions_from_image(img_np):
     # Format: [x_start, y_start, x_end, y_end]
     regions = {
         # Upper right corner for Form P.Q.7 and receipt number
-        "upper_right": [int(width * 0.3), 0, width, int(height * 0.3)],
+        "upper_right": [int(width * 0.5), 0, width, int(height * 0.3)],
         # Middle section for destination and transportation
         "middle": [0, int(height * 0.3), width, int(height * 0.7)],
         # Bottom section for weight, boxes, and export date
@@ -249,7 +264,7 @@ def _extract_regions_from_image(img_np):
         region_images[region_name] = img_np[y_start:y_end, x_start:x_end].copy()
 
         # # Save region for debugging (optional)
-        # cv2.imwrite(f"region_{region_name}_api.jpg", region_images[region_name])
+        cv2.imwrite(f"region_{region_name}_api.jpg", region_images[region_name])
 
     return region_images
 
@@ -271,10 +286,10 @@ def _extract_text_from_region(region_img_np, region_name, ocr: OCRDep):
 
             if region_name == "upper_right":
                 # update min_x bbox[0] -> (min_x, min_y)
-                bbox[0][0] = bbox[0][0] + int(width * 0.3)
-                bbox[1][0] = bbox[1][0] + int(width * 0.3)
-                bbox[2][0] = bbox[2][0] + int(width * 0.3)
-                bbox[3][0] = bbox[3][0] + int(width * 0.3)
+                bbox[0][0] = bbox[0][0] + int(width * 0.5)
+                bbox[1][0] = bbox[1][0] + int(width * 0.5)
+                bbox[2][0] = bbox[2][0] + int(width * 0.5)
+                bbox[3][0] = bbox[3][0] + int(width * 0.5)
             if region_name == "middle":
                 # update min_y
                 bbox[0][1] = bbox[0][1] + int(height * 0.3)

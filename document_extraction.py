@@ -4,6 +4,7 @@ import requests
 from typing import Dict, Any, Union, List, Tuple
 from urllib.parse import urlparse
 import json
+import re
 
 # Import the existing extraction functions
 from extract_text import extract_all_english_text, filter_specific_fields, extract_regions_from_image, extract_text_from_region
@@ -38,6 +39,20 @@ def is_not_second_row(bbox):
 
 def flatten_dict_list(data):
     return [item for k,v in data.items() for item in v]
+
+def extract_epxorted_date(bboxes):
+    # Pattern để trích xuất định dạng dd/mm/yyyy
+    pattern = r'\d{2}/\d{2}/\d{4}'
+    
+    # Tìm tất cả các kết quả khớp
+    for box in bboxes:
+        dates_found = re.findall(pattern, box['text'])
+        if dates_found:
+            print(f"Tìm thấy {len(dates_found)} ngày tháng:")
+            for date in dates_found:
+                print(date)
+            return dates_found
+    return None
 
 def download_image_from_url(image_url: str) -> str:
     """
@@ -252,10 +267,12 @@ def extract_info(image: str):
             ocr_text += f"{field_name}: {field_value}\n"  # Changed print() to string concatenation, added newline
         
         total_weight = extract_total_weight(flatten_dict_list(ocr_result['region_texts']))
-        
+        export_date = extract_epxorted_date(ocr_result['region_texts']['middle'])
+
         print("[ocr text]: ", ocr_text)
 
         llm_result = extract_with_llm(ocr_text) 
+        print(llm_result)
         if llm_result['status'] == 'success':
             try:
                 llm_result['llm_extraction'] = json.loads(llm_result['llm_extraction'])
@@ -272,8 +289,9 @@ def extract_info(image: str):
 if __name__ == "__main__":
     # Replace with your image path
     # image_path = "ocr_test_4_page-0001.jpg"
-    image_path = 'rotate.jpg'
+    # image_path = 'rotate.jpg'
     # image_path = 'processed_certificate.jpg'
+    image_path = 'test_image/d2.JPG'
     
     # Extract fields by region
     region_texts = extract_info(image_path)
