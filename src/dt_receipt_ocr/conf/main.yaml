@@ -1,3 +1,6 @@
 openai:
   base_url: ""
   api_key: ""
+
+security:
+  api_key: ""
