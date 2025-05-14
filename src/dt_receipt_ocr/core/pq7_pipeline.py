@@ -142,7 +142,7 @@ def extract_total_weight(bboxes):
     anchor_box = {}
     unit = ""
     for i, bbox in enumerate(bboxes):
-        if bbox["text"].lower() == "quantity":
+        if bbox["text"].lower() == "quantity" or 'quant' in  bbox["text"].lower():
             potential = bboxes[i:]
             anchor_box = bboxes[i]
         if ".0000" in bbox["text"]:
